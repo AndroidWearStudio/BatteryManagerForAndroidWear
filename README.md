@@ -1,11 +1,12 @@
-AndroidWearSampleJp
+BatterymanagerForAndroidWear
 ===================
 
-Sample project to demonstrate Android wear features and apis.
-Most of comments and UI texts are Japanese, but you should be able to understand the logic if you don't understand Japanese.
+Battery Full Charged Notice
 
-Android Wearの機能やAPIをざっくり紹介するためのサンプルプロジェクトです。
-コメントや文言を極力日本語で書くようにしています。
+clone to AndroidWearSampleJp-master<https://github.com/thorikawa/AndroidWearSampleJp>
+Thanks.
+
+
 
 ## License
 MIT License
