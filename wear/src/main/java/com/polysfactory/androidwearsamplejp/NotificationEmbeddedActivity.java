@@ -5,37 +5,104 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.AsyncTask;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.Wearable;
+
+import java.util.Collection;
+import java.util.HashSet;
+
 public class NotificationEmbeddedActivity extends Activity {
 
+    private static final String START_ACTIVITY_PATH = "/start/MainActivity";
+    private static final String TAG = "TEST";
+    private GoogleApiClient mGoogleApiClient;
     public static final String EXTRA_KEY_COUNT = "extra_key_count";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notification);
 
-        TextView textView = (TextView) findViewById(R.id.text);
-        Intent intent = getIntent();
+
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(Wearable.API)
+                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                    @Override
+                    public void onConnected(Bundle bundle) {
+                        Log.d(TAG, "Google Api Client connected");
+                        new AsyncTask<Void, Void, Void>() {
+                            @Override
+                            protected Void doInBackground(Void... voids) {
+//                                restoreCurrentCount();
+                                return null;
+                            }
+                        }.execute();
+                    }
+
+                    @Override
+                    public void onConnectionSuspended(int i) {
+                    }
+                }).build();
+        mGoogleApiClient.connect();
+
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                sendMessageToStartActivity();
+                return null;
+            }
+        }.execute();
+
+//        TextView textView = (TextView) findViewById(R.id.text);
+//        Intent intent = getIntent();
 //        IntentFilter intentFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
 //        Intent batteryStatus = registerReceiver(mBroadcastReceiver, intentFilter);
-        try {
-            int count = intent.getIntExtra(EXTRA_KEY_COUNT, -1);
-//            int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-            if (count >= 0) {
-                textView.setText(String.format("count is %d", count));
-            } else {
-                textView.setText("なんだて？");
-            }
-        } catch (Exception e) {
-            Log.d( "t", e.getMessage());
-        }
+//        try {
+//            int count = intent.getIntExtra(EXTRA_KEY_COUNT, -1);
+////            int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+//            if (count >= 0) {
+//                textView.setText(String.format("count is %d", count));
+//            } else {
+//                textView.setText("なんだて？");
+//            }
+//        } catch (Exception e) {
+//            Log.d( "t", e.getMessage());
+//        }
 
     }
+
+
+    private void sendMessageToStartActivity() {
+        Collection<String> nodes = getNodes();
+        for (String node : nodes) {
+            MessageApi.SendMessageResult result =
+                    Wearable.MessageApi.sendMessage(mGoogleApiClient, node, START_ACTIVITY_PATH, null).await();
+            if (!result.getStatus().isSuccess()) {
+                Log.e(TAG, "ERROR: failed to send Message: " + result.getStatus());
+            }
+        }
+    }
+
+    private Collection<String> getNodes() {
+        HashSet<String> results = new HashSet<String>();
+        NodeApi.GetConnectedNodesResult nodes =
+                Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).await();
+        for (Node node : nodes.getNodes()) {
+            results.add(node.getId());
+        }
+        return results;
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
